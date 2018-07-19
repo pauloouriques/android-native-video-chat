@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Video Chat</string>
+
+    <!-- VideoCallActivity Begin -->
+    <string name="camera_permission_fail">You need to grant CAMERA permission to continue.</string>
+    <!-- VideoCallActivity End -->
+</resources>
