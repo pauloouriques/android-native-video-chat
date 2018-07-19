@@ -27,7 +27,7 @@ import io.socket.client.Socket;
  */
 
 public class SignallingClient {
-    private final static String API_URL = "url-to-your-signaling-server";
+    private final static String API_URL = "<signaling-server-url>";
     private static SignallingClient instance;
     private String mRoomName = null;
     private Socket socket;
@@ -70,7 +70,6 @@ public class SignallingClient {
             if (!mRoomName.isEmpty()) {
                 emitInitStatement(mRoomName);
             }
-
 
             //room created event.
             socket.on("created", args -> {
@@ -162,7 +161,6 @@ public class SignallingClient {
         }
     }
 
-
     public void emitIceCandidate(IceCandidate iceCandidate) {
         try {
             JSONObject object = new JSONObject();
@@ -182,7 +180,6 @@ public class SignallingClient {
         socket.disconnect();
         socket.close();
     }
-
 
     public String getmRoomName() {
         return this.mRoomName;
