@@ -27,7 +27,7 @@ import io.socket.client.Socket;
  */
 
 public class SignallingClient {
-    private final static String API_URL = "https://server-native-video-chat.herokuapp.com/";
+    private final static String API_URL = "<signaling-server-url>";
     private static SignallingClient instance;
     private String mRoomName = null;
     private Socket socket;

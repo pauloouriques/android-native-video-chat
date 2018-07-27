@@ -109,9 +109,9 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
 
     private void getIceServers() {
         PeerConnection.IceServer peerIceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
-        PeerConnection.IceServer peerIceServerTurn = PeerConnection.IceServer.builder("turn:167.99.97.153:443")
-                .setUsername("user")
-                .setPassword("root")
+        PeerConnection.IceServer peerIceServerTurn = PeerConnection.IceServer.builder("turn:<ip>:<port>")
+                .setUsername("<user>")
+                .setPassword("<password>")
                 .createIceServer();
 
         peerIceServers.add(peerIceServer);
