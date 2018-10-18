@@ -39,7 +39,6 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
@@ -58,7 +57,6 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
     private AudioTrack localAudioTrack;
     private SurfaceViewRenderer localVideoView;
     private SurfaceViewRenderer remoteVideoView;
-    private VideoRenderer remoteRenderer;
     private PeerConnection localPeer;
     private EglBase rootEglBase;
     private SignallingClient mSignallingClient;
@@ -111,7 +109,13 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
 
     private void getIceServers() {
         PeerConnection.IceServer peerIceServer = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
+        PeerConnection.IceServer peerIceServerTurn = PeerConnection.IceServer.builder("turn:<ip>:<port>")
+                .setUsername("<user>")
+                .setPassword("<password>")
+                .createIceServer();
+
         peerIceServers.add(peerIceServer);
+        peerIceServers.add(peerIceServerTurn);
     }
 
 
@@ -128,8 +132,11 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
         DefaultVideoEncoderFactory defaultVideoEncoderFactory = new DefaultVideoEncoderFactory(
                 rootEglBase.getEglBaseContext(),  /* enableIntelVp8Encoder */true,  /* enableH264HighProfile */true);
         DefaultVideoDecoderFactory defaultVideoDecoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
-        peerConnectionFactory = new PeerConnectionFactory(options, defaultVideoEncoderFactory, defaultVideoDecoderFactory);
-
+        peerConnectionFactory = PeerConnectionFactory.builder()
+                .setOptions(options)
+                .setVideoEncoderFactory(defaultVideoEncoderFactory)
+                .setVideoDecoderFactory(defaultVideoDecoderFactory)
+                .createPeerConnectionFactory();
 
         //Now create a VideoCapturer instance.
         VideoCapturer videoCapturerAndroid;
@@ -155,11 +162,7 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
             videoCapturerAndroid.startCapture(1024, 720, 30);
         }
         localVideoView.setVisibility(View.VISIBLE);
-        //create a videoRenderer based on SurfaceViewRenderer instance
-        VideoRenderer localRenderer = new VideoRenderer(localVideoView);
-        // And finally, with our VideoRenderer ready, we
-        // can add our renderer to the VideoTrack.
-        localVideoTrack.addRenderer(localRenderer);
+        localVideoTrack.addSink(localVideoView);
 
         localVideoView.setMirror(true);
         remoteVideoView.setMirror(true);
@@ -274,16 +277,14 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
         final VideoTrack videoTrack = stream.videoTracks.get(0);
         runOnUiThread(() -> {
             try {
-                remoteRenderer = new VideoRenderer(remoteVideoView);
                 remoteVideoView.setVisibility(View.VISIBLE);
-                videoTrack.addRenderer(remoteRenderer);
+                videoTrack.addSink(remoteVideoView);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
 
         final AudioTrack audioTrack = stream.audioTracks.get(0);
-
     }
 
 
