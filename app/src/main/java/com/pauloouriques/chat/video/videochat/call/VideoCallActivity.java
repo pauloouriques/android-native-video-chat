@@ -115,7 +115,7 @@ public class VideoCallActivity extends AppCompatActivity implements View.OnClick
                 .createIceServer();
 
         peerIceServers.add(peerIceServer);
-        peerIceServers.add(peerIceServerTurn);
+//        peerIceServers.add(peerIceServerTurn);
     }
 
 
