@@ -1,6 +1,5 @@
 package com.pauloouriques.chat.video.videochat.webrtc;
 
-import android.annotation.SuppressLint;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -36,20 +35,15 @@ public class SignallingClient {
     public boolean isStarted = false;
     private SignalingInterface callback;
 
-    //This piece of code should not go into production!!
-    //This will help in cases where the node server is running in non-https server and you want to ignore the warnings
-    @SuppressLint("TrustAllX509TrustManager")
     private final TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
             return new java.security.cert.X509Certificate[]{};
         }
 
-        public void checkClientTrusted(X509Certificate[] chain,
-                                       String authType) {
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
         }
 
-        public void checkServerTrusted(X509Certificate[] chain,
-                                       String authType) {
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
         }
     }};
 
@@ -62,48 +56,27 @@ public class SignallingClient {
             sslcontext.init(null, trustAllCerts, null);
             IO.setDefaultHostnameVerifier((hostname, session) -> true);
             IO.setDefaultSSLContext(sslcontext);
-            //set the socket.io url here
             socket = IO.socket(API_URL);
             socket.connect();
-            Log.d("SignallingClient", "init() called");
-
             if (!mRoomName.isEmpty()) {
                 emitInitStatement(mRoomName);
             }
-
-            //room created event.
             socket.on("created", args -> {
-                Log.d("SignallingClient", "created call() called with: args = [" + Arrays.toString(args) + "]");
                 isInitiator = true;
                 callback.onCreatedRoom();
             });
-
-            //room is full event
             socket.on("full", args -> Log.d("SignallingClient", "full call() called with: args = [" + Arrays.toString(args) + "]"));
-
-            //peer joined event
             socket.on("join", args -> {
-                Log.d("SignallingClient", "join call() called with: args = [" + Arrays.toString(args) + "]");
                 isChannelReady = true;
                 callback.onNewPeerJoined();
             });
-
-            //when you joined a chat room successfully
             socket.on("joined", args -> {
-                Log.d("SignallingClient", "joined call() called with: args = [" + Arrays.toString(args) + "]");
                 isChannelReady = true;
                 callback.onJoinedRoom();
             });
-
-            //log event
             socket.on("log", args -> Log.d("SignallingClient", "log call() called with: args = [" + Arrays.toString(args) + "]"));
-
-            //bye event
             socket.on("bye", args -> callback.onRemoteHangUp((String) args[0]));
-
-            //messages - SDP and ICE candidates are transferred through this
             socket.on("message", args -> {
-                Log.d("SignallingClient", "message call() called with: args = [" + Arrays.toString(args) + "]");
                 if (args[0] instanceof String) {
                     Log.d("SignallingClient", "String received :: " + args[0]);
                     String data = (String) args[0];
@@ -115,9 +88,7 @@ public class SignallingClient {
                     }
                 } else if (args[0] instanceof JSONObject) {
                     try {
-
                         JSONObject data = (JSONObject) args[0];
-                        Log.d("SignallingClient", "Json Received :: " + data.toString());
                         String type = data.getString("type");
                         if (type.equalsIgnoreCase("offer")) {
                             callback.onOfferReceived(data);
@@ -125,6 +96,8 @@ public class SignallingClient {
                             callback.onAnswerReceived(data);
                         } else if (type.equalsIgnoreCase("candidate") && isStarted) {
                             callback.onIceCandidateReceived(data);
+                        } else if (type.equalsIgnoreCase("got user media")) {
+                            callback.onTryToStart();
                         }
 
                     } catch (JSONException e) {
@@ -138,24 +111,29 @@ public class SignallingClient {
     }
 
     private void emitInitStatement(String message) {
-        Log.d("SignallingClient", "emitInitStatement() called with: event = [" + "create or join" + "], message = [" + message + "]");
         socket.emit("create or join", message);
     }
 
     public void emitMessage(String message) {
-        Log.d("SignallingClient", "emitMessage() called with: message = [" + message + "]");
-        socket.emit("message", message);
+        try {
+            Log.d("SignallingClient", "emitMessage() called with: message = [" + message + "]");
+            JSONObject obj = new JSONObject();
+            obj.put("type", message);
+            obj.put("room", getmRoomName());
+            Log.d("emitMessage", obj.toString());
+            socket.emit("message", obj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     public void emitMessage(SessionDescription message) {
         try {
-            Log.d("SignallingClient", "emitMessage() called with: message = [" + message + "]");
             JSONObject obj = new JSONObject();
             obj.put("type", message.type.canonicalForm());
             obj.put("sdp", message.description);
-            Log.d("emitMessage", obj.toString());
+            obj.put("room", getmRoomName());
             socket.emit("message", obj);
-            Log.d("vivek1794", obj.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -168,11 +146,11 @@ public class SignallingClient {
             object.put("label", iceCandidate.sdpMLineIndex);
             object.put("id", iceCandidate.sdpMid);
             object.put("candidate", iceCandidate.sdp);
+            object.put("room", getmRoomName());
             socket.emit("message", object);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public void close() {
