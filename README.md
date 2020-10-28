@@ -2,7 +2,7 @@ Android Native Video Chat
 =========================
 
 ## Adding your signaling server URL:
-- Replace the entry <signaling-server-url> located in the file webrtc/SignallingClient with the your signaling server absolute URL.
+- Replace the entry <signaling-server-url> located in the file webrtc/SignallingClient with the your signaling server absolute URL (remember to include the http or https).
 
 
 ## Running the app:
